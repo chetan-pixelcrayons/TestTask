@@ -5,5 +5,5 @@ const globalServices = require("../services/globalService");
 
 router.post('/allocateRequest', globalServices.checkResourceSharingLimit,requestController.allocateRequest);
 router.get('/getResourceInformation',requestController.resourceInformation);
-
+router.post('/allocateAndReport', requestController.allocateAndReport)
 module.exports = router;

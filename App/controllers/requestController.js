@@ -2,6 +2,7 @@ const Request = require('../models/requestModel');
 const constants = require("../../constants.json");
 const globalServices = require("../services/globalService");
 const waterfall = require('async-waterfall');
+const _ = require("lodash");
 exports.allocateRequest = (req, res, next) => {
     const request = new Request({
         clientId: req.body.clientId, 
@@ -55,6 +56,45 @@ exports.resourceInformation =  (req, res, next) => {
           });
     });
   
+}
+
+exports.allocateAndReport = (req, res, next) => {
+ let  data = req.body;
+ let  newData = req.body;
+ let butlers =[];
+ let  spreadClientIds = _.uniq(_.map(newData, 'clientId'))
+ for(let i=0;i<data.length;i++){
+  let {newData , requests} =  assignButler(data);
+  butlers.push(
+      {
+          "requests" : requests
+      });
+      data = newData  ? newData : [];
+ }
+ res.json({
+    butlers :butlers,
+    spreadClientIds: spreadClientIds
+ })
+}
+
+assignButler = function(data){
+    let maxHours =8;
+    let currentHours =0;
+    let requests =[];
+    for(let i=0;(currentHours <= maxHours) && i< data.length ;i++){
+     const item =  _.maxBy(data,"hours")
+      if(item.hours <= maxHours){
+      currentHours += item.hours;
+      requests.push(item.requestId);
+      }
+      var index = data.findIndex(function(element){
+        return element.hours===item.hours;
+     })
+     if(index !==-1){
+        data.splice(index, 1)
+     }
+  }
+  return {data,requests};
 }
 
 
