@@ -74,4 +74,18 @@ assignButler = function(data){
   return {data,requests};
 }
 
+// Adding Dummy Data When MongoDB Intializes
+exports.addDummyData = () => {
+    const request = new Request({
+        clientId: 1, 
+        requestId: "xyz", 
+        hours: 6,
+      });
+          request.save()
+              .then(newRequest => {}) .catch(err =>{
+                next(err);
+              })
+  
+}
+
 

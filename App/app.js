@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require("body-parser");
 const mongoose = require('mongoose');
 var cors = require('cors');
+const  requestController = require('./controllers/requestController');
 const app = express();
 app.use(cors());
 
@@ -18,6 +19,7 @@ app.use(bodyParser.urlencoded({
 
 
 mongoose.connect('mongodb://localhost/test').then(() => {
+	requestController.addDummyData();
 	console.log('connected to databse successfully');
 }).catch(() => {
 	console.log('connected to databse failed');
