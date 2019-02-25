@@ -3,7 +3,9 @@ const constants = require("../../constants.json");
 const globalServices = require("../services/globalService");
 const waterfall = require('async-waterfall');
 const _ = require("lodash");
-exports.allocateRequest = (req, res, next) => {
+
+// Saving the Request Information
+exports.saveRequest = (req, res, next) => {
     const request = new Request({
         clientId: req.body.clientId, 
         requestId: req.body.requestId, 
@@ -20,73 +22,48 @@ exports.allocateRequest = (req, res, next) => {
               })
   
 }
-exports.resourceInformation =  (req, res, next) => {
-    Request.distinct("clientId")
-    .then(response => {
-        let clientIds = response;
-        let butlers =[];
-        waterfall([
-            function(callback){
-                for(let i=0; i<clientIds.length;i++){
-                    let requests = [];
-                    Request.find({clientId : clientIds[i]}).then(data =>{
-                        for(let j=0; j<data.length;j++){
-                           requests.push(data[j].requestId);
-                        }
-                        butlers.push(
-                            {
-                                "requests" :requests
-                            }
-                        )
-                        console.log("butlers", butlers)
-                    });
-                }
-              callback(null,butlers);
-            },
-            function(butlers, callback){
-                res.status(200).json({
-                    success : true,
-                    message : "success",
-                    butlers : butlers,
-                    spreadClientIds : clientIds
-                })
-            }
-          ], function (err, result) {
-            // result now equals 'done'
-          });
-    });
-  
-}
 
+// Getting the Resource Allocation Information
 exports.allocateAndReport = (req, res, next) => {
- let  data = req.body;
- let  newData = req.body;
- let butlers =[];
- let  spreadClientIds = _.uniq(_.map(newData, 'clientId'))
- for(let i=0;i<data.length;i++){
-  let {newData , requests} =  assignButler(data);
-  butlers.push(
-      {
-          "requests" : requests
-      });
-      data = newData  ? newData : [];
- }
- res.json({
-    butlers :butlers,
-    spreadClientIds: spreadClientIds
- })
+    Request.find({}).then(response =>{
+        let  data = Object.assign([],response);
+        console.log(response)
+        let butlers =[];
+
+        //Finding the unique Client IDs
+        let  spreadClientIds = _.uniq(_.map(response, 'clientId'))
+        for(let i=0;i<data.length;i++){
+         let {newData , requests} =  assignButler(data);
+         butlers.push(
+             {
+                 "requests" : requests
+             });
+             data = newData  ?  Object.assign([],newData) : [];
+        }
+        
+        // Sending the Response
+        res.json({
+           butlers :butlers,
+           spreadClientIds: spreadClientIds
+        })
+    })
+
 }
 
+// Assigning the Buttler to Each Process of 8 Hour
 assignButler = function(data){
     let maxHours =8;
     let currentHours =0;
     let requests =[];
-    for(let i=0;(currentHours <= maxHours) && i< data.length ;i++){
+    let newData =  Object.assign([],data);
+    for(let i=0;(currentHours <= maxHours) && i< newData.length ;i++){
      const item =  _.maxBy(data,"hours")
       if(item.hours <= maxHours){
       currentHours += item.hours;
       requests.push(item.requestId);
       }
+      
+      // Removing the Allocated Resource Request
       var index = data.findIndex(function(element){
         return element.hours===item.hours;
      })
